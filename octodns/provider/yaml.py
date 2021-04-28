@@ -276,7 +276,8 @@ class SplitYamlProvider(YamlProvider):
             if record in self.CATCHALL_RECORD_NAMES:
                 catchall[record] = config
                 continue
-            filename = join(zone_dir, '{}.yaml'.format(record))
+            record_name = ".".join(reversed(record.split(".")))
+            filename = join(zone_dir, '{}.yaml'.format(record_name))
             self.log.debug('_apply:   writing filename=%s', filename)
             with open(filename, 'w') as fh:
                 record_data = {record: config}
