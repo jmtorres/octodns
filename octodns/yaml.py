@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function, \
 from natsort import natsort_keygen
 from yaml import SafeDumper, SafeLoader, load, dump
 from yaml.constructor import ConstructorError
+from yamlinclude import YamlIncludeConstructor
 
 
 _natsort_key = natsort_keygen()
@@ -30,9 +31,14 @@ class SortEnforcingLoader(SafeLoader):
                                        .format(expected, key, node.start_mark))
         return dict(ret)
 
-
 SortEnforcingLoader.add_constructor(SortEnforcingLoader.DEFAULT_MAPPING_TAG,
                                     SortEnforcingLoader._construct)
+
+
+YamlIncludeConstructor.add_to_loader_class(loader_class=SortEnforcingLoader)
+
+
+YamlIncludeConstructor.add_to_loader_class(loader_class=SafeLoader)
 
 
 def safe_load(stream, enforce_order=True):
