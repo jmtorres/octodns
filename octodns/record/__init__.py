@@ -417,6 +417,7 @@ class _ValueMixin(object):
 
 
 class _DynamicPool(object):
+    log = getLogger('_DynamicPool')
 
     def __init__(self, _id, data):
         self._id = _id
@@ -428,6 +429,15 @@ class _DynamicPool(object):
             } for d in data['values']
         ]
         values.sort(key=lambda d: d['value'])
+
+        # normalize weight of a single-value pool
+        if len(values) == 1:
+            weight = data['values'][0].get('weight', 1)
+            if weight != 1:
+                self.log.warn(
+                    'Using weight=1 instead of %s for single-value pool %s',
+                    weight, _id)
+                values[0]['weight'] = 1
 
         fallback = data.get('fallback', None)
         self.data = {
@@ -573,6 +583,10 @@ class _DynamicMixin(object):
                         reasons.append('missing value in pool "{}" '
                                        'value {}'.format(_id, value_num))
 
+                if len(values) == 1 and values[0].get('weight', 1) != 1:
+                    reasons.append('pool "{}" has single value with '
+                                   'weight!=1'.format(_id))
+
                 fallback = pool.get('fallback', None)
                 if fallback is not None:
                     if fallback in pools:
@@ -628,7 +642,6 @@ class _DynamicMixin(object):
                     if pool not in pools:
                         reasons.append('rule {} undefined pool "{}"'
                                        .format(rule_num, pool))
-                        pools_seen.add(pool)
                     elif pool in pools_seen and geos:
                         reasons.append('rule {} invalid, target pool "{}" '
                                        'reused'.format(rule_num, pool))
