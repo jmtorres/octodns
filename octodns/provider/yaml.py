@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function, \
 
 from collections import defaultdict
 from os import listdir, makedirs
-from os.path import isdir, isfile, join
+from os.path import isdir, isfile, join, basename
 import logging
 
 from ..record import Record
@@ -130,11 +130,13 @@ class YamlProvider(BaseProvider):
     def SUPPORTS_ROOT_NS(self):
         return self.supports_root_ns
 
-    def _populate_from_file(self, filename, zone, lenient):
+    def _populate_from_file(self, filename, zone, lenient, subdomain=None):
         with open(filename, 'r') as fh:
             yaml_data = safe_load(fh, enforce_order=self.enforce_order)
             if yaml_data:
                 for name, data in yaml_data.items():
+                    if subdomain:
+                        name = f'{name}.{subdomain}' if name else subdomain
                     if not isinstance(data, list):
                         data = [data]
                     for d in data:
@@ -210,6 +212,15 @@ def _list_all_yaml_files(directory):
     return list(yaml_files)
 
 
+def _list_all_subdomain_directories(directory):
+    directories = set()
+    for d in listdir(directory):
+        subdirectory = join(directory, d)
+        if isdir(subdirectory):
+            directories.add(subdirectory)
+    return list(directories)
+
+
 class SplitYamlProvider(YamlProvider):
     '''
     Core provider for records configured in multiple YAML files on disk.
@@ -270,6 +281,14 @@ class SplitYamlProvider(YamlProvider):
         self.log.info('populate:   found %s YAML files', len(yaml_filenames))
         for yaml_filename in yaml_filenames:
             self._populate_from_file(yaml_filename, zone, lenient)
+
+        subdomain_directories = _list_all_subdomain_directories(self._zone_directory(zone))
+        for subdomain_directory in subdomain_directories:
+            subdomain = basename(subdomain_directory)
+            yaml_filenames = _list_all_yaml_files(subdomain_directory)
+            self.log.info('populate:   found %s YAML files', len(yaml_filenames))
+            for yaml_filename in yaml_filenames:
+                self._populate_from_file(yaml_filename, zone, lenient, subdomain)
 
         self.log.info('populate:   found %s records, exists=False',
                       len(zone.records) - before)
