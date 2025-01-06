@@ -8,7 +8,7 @@ from natsort import natsort_keygen
 from yaml import SafeDumper, SafeLoader, dump, load
 from yaml.constructor import ConstructorError
 from yaml.representer import SafeRepresenter
-
+from yamlinclude import YamlIncludeConstructor
 from .context import ContextDict
 
 _natsort_key = natsort_keygen()
@@ -83,6 +83,11 @@ class SortingDumper(SafeDumper):
     def _representer(self, data):
         data = sorted(data.items(), key=lambda d: _natsort_key(d[0]))
         return self.represent_mapping(self.DEFAULT_MAPPING_TAG, data)
+
+YamlIncludeConstructor.add_to_loader_class(loader_class=SortEnforcingLoader)
+
+
+YamlIncludeConstructor.add_to_loader_class(loader_class=SafeLoader)
 
 
 SortingDumper.add_representer(dict, SortingDumper._representer)
