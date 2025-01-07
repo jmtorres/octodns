@@ -76,7 +76,7 @@ setup(
     },
     install_requires=(
         'PyYaml>=4.2b1',
-        'pyyaml-include>=1.3',
+        'pyyaml-include>=1.3,<2.0',
         'dnspython>=2.2.1',
         'fqdn>=1.5.0',
         'idna>=3.3',
